@@ -58,7 +58,7 @@ class MyTestCase(unittest.TestCase):
     def test_run_sutom_with_statistically_optimal_candidate_selector(self):
 
         attempts = main.run_sutom('SURDITE', candidate_selector=main.statistically_optimal_word)
-        self.assertListEqual(attempts, ['SABAYON', 'SCELLER', 'SPIRITE', 'SURDITE'])
+        self.assertListEqual(attempts, ['SAUTOIR', 'STRIURE', 'SURDITE'])
 
     def test_run_challenge(self):
         nb_attempts = main.run_challenge(['SURDITE', 'SCRUPULE', 'ECOEURE'])
