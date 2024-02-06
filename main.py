@@ -175,12 +175,12 @@ def statistically_optimal_word(words):
                                             forbidden_letters=forbidden_letters)
         return len(possible_words)
 
-    def get_score(solution):
+    def get_score_for_solution(solution):
         scores_solution = [get_score(essai, solution) for essai in words]
         score = np.sum(scores_solution)
         return score
 
-    scores = [get_score(solution) for solution in words]
+    scores = [get_score_for_solution(solution) for solution in words]
 
     result = words[np.argmin(scores)]
     return result
