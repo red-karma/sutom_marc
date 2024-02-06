@@ -1,5 +1,7 @@
 import string
 import copy
+import numpy as np
+
 
 def read_file(filename='pli07.txt'):
     with open(filename) as file:
@@ -122,7 +124,7 @@ def get_possible_words(words, known_letters=[], wrong_place_letters=[], forbidde
     return possible_words_with_wrong_place_letters
 
 
-def get_best_word_from_possibilities(words):
+def preference_for_letters_TRE(words):
     """
     Returns the best candidate for the next attempt, from the list 'words'
     :param words: list of words
@@ -151,6 +153,38 @@ def get_best_word_from_possibilities(words):
     return result
 
 
+def statistically_optimal_word(words):
+    """
+    It sounds like an evidence, but this is exactly the principle of this function: if we chose the best word, we get
+    the smallest number of possible words afterwards
+    => for each word, we have to imagine that it is the correct word (ie. the word to guess), and check how many
+    possible words we would get if we chose any other word from 'words'
+    => the best word is the one with the smallest result
+
+    :param words:
+    :return:
+    """
+
+    def get_score(essai, solution):
+        known_letters = _get_correct_letters(essai, solution)
+        wrong_place_letters, forbidden_letters = _get_wrong_place_and_forbidden_letters(essai,
+                                                                                        solution,
+                                                                                        known_letters)
+        possible_words = get_possible_words(words, known_letters=known_letters,
+                                            wrong_place_letters=wrong_place_letters,
+                                            forbidden_letters=forbidden_letters)
+        return len(possible_words)
+
+    def get_score(solution):
+        scores_solution = [get_score(essai, solution) for essai in words]
+        score = np.sum(scores_solution)
+        return score
+
+    scores = [get_score(solution) for solution in words]
+
+    result = words[np.argmin(scores)]
+    return result
+
 def _get_correct_letters(word, word_to_guess):
     correct_letters = []
     for letter_word, letter_word_to_guess, position in zip(word, word_to_guess, range(0, len(word))):
@@ -165,8 +199,8 @@ def _get_wrong_place_and_forbidden_letters(word, word_to_guess, correct_letters)
     # In order to ease our life, we replace the letters which are already correct by - in both words, in order to tag
     # them as 'already taken'
     for letter, position in correct_letters:
-        word_letters[position-1] = '-'
-        word_to_guess_letters[position-1] = '-'
+        word_letters[position - 1] = '-'
+        word_to_guess_letters[position - 1] = '-'
 
     wrong_place_letters = []
     for letter_word, letter_word_to_guess, position in zip(word_letters, word_to_guess_letters,
@@ -186,7 +220,7 @@ def _get_wrong_place_and_forbidden_letters(word, word_to_guess, correct_letters)
     return wrong_place_letters, forbidden_letters
 
 
-def _run_sutom(word_to_guess, possible_words):
+def _run_sutom(word_to_guess, possible_words, candidate_selector):
     known_letters = [(word_to_guess[0], 1)]
     wrong_place_letters = []
     forbidden_letters = set()
@@ -202,7 +236,7 @@ def _run_sutom(word_to_guess, possible_words):
         if len(possible_words) == 0:
             raise Exception(f"The word {word_to_guess} could not be guessed.")
 
-        best_word = get_best_word_from_possibilities(possible_words)
+        best_word = candidate_selector(possible_words)
         attempts.append(best_word)
 
         known_letters = _get_correct_letters(best_word, word_to_guess)
@@ -216,15 +250,18 @@ def _run_sutom(word_to_guess, possible_words):
     return attempts
 
 
-def run_sutom(word_to_guess):
+def run_sutom(word_to_guess, candidate_selector=preference_for_letters_TRE):
     possible_words = read_file()
     possible_words = keep_words_with_length(possible_words, len(word_to_guess))
-    return _run_sutom(word_to_guess, possible_words)
+    result = _run_sutom(word_to_guess, possible_words, candidate_selector)
+    return result
 
 
-def run_challenge(words_to_guess):
+def run_challenge(words_to_guess, candidate_selector=preference_for_letters_TRE):
     possible_words = read_file()
-    result = [len(_run_sutom(word_to_guess, keep_words_with_length(possible_words, len(word_to_guess)))) for word_to_guess in words_to_guess]
+    result = [
+        len(_run_sutom(word_to_guess, keep_words_with_length(possible_words, len(word_to_guess)), candidate_selector))
+        for word_to_guess in words_to_guess]
     return result
 
 
@@ -232,6 +269,6 @@ if __name__ == '__main__':
     words = read_file()
     words = keep_words_with_length(words, 7)
     words = get_possible_words(words, known_letters=[('S', 1), ('R', 3), ('T', 6), ('E', 7)],
-                                        wrong_place_letters=[('I', 4)], forbidden_letters={'A', 'B', 'O', 'C', 'P'})
-    best_word = get_best_word_from_possibilities(words)
+                               wrong_place_letters=[('I', 4)], forbidden_letters={'A', 'B', 'O', 'C', 'P'})
+    best_word = preference_for_letters_TRE(words)
     print(best_word)

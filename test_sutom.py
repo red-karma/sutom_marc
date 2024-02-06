@@ -33,7 +33,7 @@ class MyTestCase(unittest.TestCase):
         words = main.read_file()
         words = main.keep_words_with_length(words, 8)
         possible_words = main.get_possible_words(words, known_letters=[('A', 1)])
-        best_word = main.get_best_word_from_possibilities(possible_words)
+        best_word = main.preference_for_letters_TRE(possible_words)
         self.assertEqual(best_word, 'ABORTIVE')
 
     def test_run_sutom(self):
@@ -48,9 +48,28 @@ class MyTestCase(unittest.TestCase):
         attempts = main.run_sutom('ECOEURE')
         self.assertListEqual(attempts, ['ECRIANT', 'ECHOUER', 'ECOEURE'])
 
+    def test_run_sutom_with_candidate_selector(self):
+        def first_word_in_list(words):
+            return words[0]
+
+        attempts = main.run_sutom('SURDITE', candidate_selector=first_word_in_list)
+        self.assertListEqual(attempts, ['SABAYON', 'SCELLER', 'SPIRITE', 'SURDITE'])
+
+    def test_run_sutom_with_statistically_optimal_candidate_selector(self):
+
+        attempts = main.run_sutom('SURDITE', candidate_selector=main.statistically_optimal_word)
+        self.assertListEqual(attempts, ['SABAYON', 'SCELLER', 'SPIRITE', 'SURDITE'])
+
     def test_run_challenge(self):
         nb_attempts = main.run_challenge(['SURDITE', 'SCRUPULE', 'ECOEURE'])
         self.assertListEqual(nb_attempts, [3, 3, 3])
+
+    def test_run_challenge_with_candidate_selector(self):
+        def first_word_in_list(words):
+            return words[0]
+
+        nb_attempts = main.run_challenge(['SURDITE', 'SCRUPULE', 'ECOEURE'], candidate_selector=first_word_in_list)
+        self.assertListEqual(nb_attempts, [4, 4, 2])
 
 if __name__ == '__main__':
     unittest.main()
